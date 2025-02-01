@@ -1,3 +1,7 @@
+# import necessary packages
+import requests
+import textwrap
+
 def printTitle():
     print("______ _   _______   _____        _____            _ _ _                 _    ")
     print("|  _  \\ \\ | |  _  \\ |  ___|      /  ___|          | | | |               | |   ")
@@ -30,14 +34,46 @@ def getUserInput():
             print("Invalid Input. Please enter an integer!")
     return userInput
 
+# Code citation: Referenced "GeeksForGeeks"
 def searchSpellName():
-    print("Option 3 chosen.")
+    # API endpoint URL
+    url = "https://www.dnd5eapi.co/api/spells/"
+
+    # get user input
+    userSpell = input("Enter a spell name: ")
+
+    # format user input into lowercase, dashed form
+    userSpell = userSpell.lower()
+    userSpell = userSpell.replace(" ", "-")
+
+    # update URL for API call
+    url = url + userSpell
+
+    # do an API call to dnd5eapi, given a spell name
+    try:
+        response = requests.get(url)
+
+        if (response.status_code) == 200:
+            spell = response.json()
+            return spell
+        else:
+            print("Error: Spell not found with response code", response.status_code)
+            return None
+
+    except requests.exceptions.RequestException as e:
+        # handle network-related errors/exceptions
+        print("Error: ", e)
+        return None
+
 
 def searchKeyWord():
     print("Option 2 chosen.")
 
+def printLine():
+    print("-----------------------------------------------------------------------------")
+
 def showHelpMenu():
-    print("\n-----------------------------------------------------------------------------")
+    printLine()
     print("Help Manual")
     print("This program supports searching the DND5e API for particular spells")
     print("based on spell name or a particular keyword. In depth descriptions follow:\n")
@@ -54,8 +90,56 @@ def showHelpMenu():
     print("keyword in the spell fields. For example, searching 'acid' should display ")
     print("any spell whose text fields (like 'description', 'damage type', etc.) have")
     print("'acid' in it.")
-    print("-----------------------------------------------------------------------------")
+    printLine()
 
+def printSpell(spell):
+    printLine()
+
+    print("Name: ", spell['name'])
+    spellDesc = textwrap.wrap(spell['desc'][0], width=60)
+
+    print("\nDescription: ")
+    for line in spellDesc:
+        print(line)
+
+    if (spell['level'] != 0):
+        print("\nHigher level: ")
+        levelDesc = textwrap.wrap(spell['higher_level'][0], width=60)
+        for line in levelDesc:
+            print(line)
+
+
+    print("\nRange: ", spell['range'])
+    print("Casting time: ", spell['casting_time'])
+    print("Duration: ", spell['duration'])
+    print("Level: ", spell['level'])
+
+    if (spell['concentration']):
+        print("\nConcentration: Necessary")
+    else:
+        print("\nConcentration: Not necessary")
+    if 'attack_type' in spell:
+        print("Attack type: ", spell['attack_type'])
+    print("Damage type: ", spell['damage']['damage_type']['name'])
+    print("School of Magic: ", spell['school']['name'])
+    print("Class: ", spell['classes'][0]['name'])
+
+    if 'damage_at_slot_level' in spell['damage']:
+        print("\nDamage at slot level:")
+        for slot in (spell['damage']['damage_at_slot_level']):
+            print("Slot level", 
+                    slot, 
+                    ":", 
+                    spell['damage']['damage_at_slot_level'][slot])
+    if 'damage_at_character_level' in spell['damage']:
+        print("\nDamage at character level:")
+        for level in (spell['damage']['damage_at_character_level']):
+            print("Character level ", 
+                    level, 
+                    ":",
+                    spell['damage']['damage_at_character_level'][level])
+                    
+    printLine()
 
 def main():
     # variables
@@ -69,10 +153,16 @@ def main():
         printMenuOptions()
         userInput = getUserInput()
         if (userInput == 3):
-            searchSpellName()
+            spell = searchSpellName()
+            if (spell):
+                # if a spell was returned, print it
+                print("\nSpell found!\n")
+                printSpell(spell)
+
         elif (userInput == 2):
             searchKeyWord()
         elif (userInput == 1):
+            print("\n") # newline
             showHelpMenu()
         else:
             print("\nProgram closed.")
