@@ -4,10 +4,12 @@ import textwrap
 import json
 from alive_progress import alive_bar
 
-#C ONSTANTS for parameter searching
+#CONSTANTS
 FIRST_LEVEL_PARAMS = ['index', 'name', 'level', 'url']
 SECOND_LEVEL_PARAMS = ['index', 'name', 'url', 'desc', 'higher_level', 'range', 'components', 'material', 'area_of_effect', 'ritua', 'duration', 'concentration', 'casting_time', 'level', 'attack_type', 'damage', 'school', 'classes', 'subclasses', 'url']
+DESC_LENGTH = 70
 
+# Prints out the title of the program with a short sentence describing the application
 def printTitle():
     print("______ _   _______   _____        _____            _ _ _                 _    ")
     print("|  _  \\ \\ | |  _  \\ |  ___|      /  ___|          | | | |               | |   ")
@@ -19,6 +21,7 @@ def printTitle():
     print("                                       |_|                                    ")
     print("\nEasily search for DND5e spells for all your campaign needs!")
 
+# Print out main menu options
 def printMenuOptions():
     print("\nAPPLICATION FUNCTIONS")
     print("3: Search for a spell with exact spell name.") # (ex. Search for 'shocking grasp', 'fireball', etc.)
@@ -26,6 +29,7 @@ def printMenuOptions():
     print("1: Help Manual.")
     print("0: Quit.\n")
 
+# Get user input for the main menu
 def getUserInput():
     userInput = -1
     invalidInput = True
@@ -40,6 +44,8 @@ def getUserInput():
             print("Invalid Input. Please enter an integer!")
     return userInput
 
+# Option 3 implementation: Search for a spell in the API by spell name 
+# (print 1 spell)
 # Code citation: Referenced "GeeksForGeeks"
 def searchSpellName():
     # API endpoint URL
@@ -63,7 +69,7 @@ def searchSpellName():
             spell = response.json()
             return spell
         else:
-            print("Error: Spell not found with response code", response.status_code)
+            print("\nError: Spell not found with response code", response.status_code)
             return None
 
     except requests.exceptions.RequestException as e:
@@ -71,7 +77,8 @@ def searchSpellName():
         print("Error: ", e)
         return None
 
-
+# Option 2 implementation: search for spells in the API by keyword in spell name 
+# (possibly print many spells)
 def searchKeyWord():
     matchedIndices = [] # initialize empty array of matched indices
     matchedNames = [] # initialize empty array of matched names
@@ -84,11 +91,11 @@ def searchKeyWord():
     keyWord = input("Enter a key word to search for: ")
 
     # find all matching keywords
-    # format user input into lowercase, dashed form
+    # format user input into lowercase form
     keyWord = keyWord.lower()
     keyWord = keyWord.replace(" ", "+")
 
-    # Find a spell that matches the key word in name field
+    # Find spells that match the key word in name field
     try:
         allSpellsURL = url + "?"
         currURL = allSpellsURL + "name=" + keyWord
@@ -97,12 +104,12 @@ def searchKeyWord():
             matchingSpells = currResponse.json()
             for spell in matchingSpells['results']:
                 if spell['index'] not in matchedIndices:
+                    # only match spells that have not already been matched
                     matchedIndices.append(spell['index'])
                     matchedNames.append(spell['name'])
                     numMatches += 1
         else:
             print("Error: No response with response code", currResponse.status_code)
-            
     except requests.exceptions.RequestException as e:
         # handle network-related errors/exceptions
         print("Error: ", e)
@@ -113,21 +120,77 @@ def searchKeyWord():
         print("\nNo matches were found.")
     else: 
         print("\nMatches were found.")
-        i = 1
-        for match in matchedNames:
-            print(i, ": ", match)
-            i += 1
+        printNumberedMatches(matchedNames)
+
         # give user decision to read more about a spell or return to main menu
+        userChoice = subSpellMenu()
+        invalidChoice = True
+        while (invalidChoice or userChoice == 1):
+            try:
+                # Choose a spell to examine further
+                spellChoice = getSpellChoice(numMatches, matchedNames)
+                invalidChoice = False
+                try: 
+                    # get spell by index
+                    spellToPrintURL = url + matchedIndices[spellChoice - 1]
+                    spellToPrintResp = requests.get(spellToPrintURL)
+                    if spellToPrintResp.status_code == 200:
+                        spellToPrint = spellToPrintResp.json()
+                        printSpell(spellToPrint)
+                    else:
+                        print("Error: spell could not be displayed.")
+                except requests.exceptions.RequestException as e:
+                    # handle network-related errors/exceptions
+                    print("Error: ", e)
+                    return None
+                userChoice = subSpellMenu()
+            except ValueError:
+                print("\nInvalid Input. Please enter an integer!")    
 
+# Get user's spell choice from sub-menu in Option 2
+def getSpellChoice(numMatches, matchedNames):
+    print("\nSelect a spell from the given indices.")
+    printNumberedMatches(matchedNames)
+    spellChoiceString = "\nSpell selection [1 to " + str(numMatches) + "]: "
+    spellChoice = int(input(spellChoiceString))
+    while (spellChoice < 1 or spellChoice > numMatches):
+        print("\nInvalid Input. Please enter a valid option!")
+        printNumberedMatches(matchedNames)
+        spellChoiceString = "\nSpell selection [1 to " + str(numMatches) + "]: "
+        spellChoice = int(input(spellChoiceString))
+    return spellChoice
+
+# Print out matched spells with indexing for Option 2
+def printNumberedMatches(matchedNames):
+    i = 1
+    for match in matchedNames:
+        print(i, ": ", match)
+        i += 1
     
-def inspectSpellOrReturn():
-    print("yes")
+# Display spell sub menu options and get user input for sub menu
+def subSpellMenu():
+    print("\nSPELL OPTIONS")
+    print("1: Enter spell index to view more details about that spell")
+    print("0: Return to main menu\n")
+    userInput = -1
+    invalidInput = True
+    while (invalidInput):
+        try:
+            userInput = int(input("Select an option [1 or 0]: "))
+            if (userInput < 0 or userInput > 1):
+                print("Invalid Input. Please enter a valid option!")
+            else:
+                invalidInput = False
+        except ValueError:
+            print("Invalid Input. Please enter an integer!")    
+    return userInput
 
+# Print a line for ease of reading
 def printLine():
     print("-----------------------------------------------------------------------------")
 
+# Option 1: Display help menu
 def showHelpMenu():
-    printLine()
     print("Help Manual")
     print("This program supports searching the DND5e API for particular spells")
     print("based on spell name or a particular keyword. In depth descriptions follow:\n")
@@ -141,26 +204,29 @@ def showHelpMenu():
     print("allows you to find a spell based on a 'key word' that may appear")
     print("in the spell's name. Input '2' from the main menu and type in your ")
     print("desired key word. The application will search and display any spell ")
-    print("that has a match to the keyword in the name. For example, searching 'acid'")
-    print("should display any spell whose name has 'acid' in it.")
-    printLine()
+    print("that has a match to the keyword in the name. For example, searching")
+    print("'acid' should display any spell whose name has 'acid' in it.\n")
+    print("Option 1: Help Manual")
+    print("This is the current option you have chosen. Inputting '1' in the main")
+    print("menu will always bring you back to this help manual, where you can learn")
+    print("more about the commands this application allows.")
 
+# Print select (programmer-specified) data from a single spell
 def printSpell(spell):
     printLine()
 
     print("Name: ", spell['name'])
-    spellDesc = textwrap.wrap(spell['desc'][0], width=60)
+    spellDesc = textwrap.wrap(spell['desc'][0], width=DESC_LENGTH)
 
     print("\nDescription: ")
     for line in spellDesc:
         print(line)
 
-    if (spell['level'] != 0):
+    if (spell['higher_level']):
         print("\nHigher level: ")
-        levelDesc = textwrap.wrap(spell['higher_level'][0], width=60)
+        levelDesc = textwrap.wrap(spell['higher_level'][0], width=DESC_LENGTH)
         for line in levelDesc:
             print(line)
-
 
     print("\nRange: ", spell['range'])
     print("Casting time: ", spell['casting_time'])
@@ -173,24 +239,25 @@ def printSpell(spell):
         print("\nConcentration: Not necessary")
     if 'attack_type' in spell:
         print("Attack type: ", spell['attack_type'])
-    print("Damage type: ", spell['damage']['damage_type']['name'])
+    if ("damage" in spell):
+        print("Damage type: ", spell['damage']['damage_type']['name'])
+        if 'damage_at_slot_level' in spell['damage']:
+            print("\nDamage at slot level:")
+            for slot in (spell['damage']['damage_at_slot_level']):
+                print("Slot level", 
+                        slot, 
+                        ":", 
+                        spell['damage']['damage_at_slot_level'][slot])
+        if 'damage_at_character_level' in spell['damage']:
+            print("\nDamage at character level:")
+            for level in (spell['damage']['damage_at_character_level']):
+                print("Character level ", 
+                        level, 
+                        ":",
+                        spell['damage']['damage_at_character_level'][level])
+
     print("School of Magic: ", spell['school']['name'])
     print("Class: ", spell['classes'][0]['name'])
-
-    if 'damage_at_slot_level' in spell['damage']:
-        print("\nDamage at slot level:")
-        for slot in (spell['damage']['damage_at_slot_level']):
-            print("Slot level", 
-                    slot, 
-                    ":", 
-                    spell['damage']['damage_at_slot_level'][slot])
-    if 'damage_at_character_level' in spell['damage']:
-        print("\nDamage at character level:")
-        for level in (spell['damage']['damage_at_character_level']):
-            print("Character level ", 
-                    level, 
-                    ":",
-                    spell['damage']['damage_at_character_level'][level])
     printLine()
 
 def main():
@@ -214,12 +281,11 @@ def main():
         elif (userInput == 2):
             searchKeyWord()
         elif (userInput == 1):
+            printLine()
             showHelpMenu()
+            printLine()
         else:
             print("\nProgram closed.")
-
-    
-
 
 if __name__ == "__main__":
     main()
