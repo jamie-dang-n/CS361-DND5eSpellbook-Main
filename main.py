@@ -2,7 +2,6 @@
 import requests
 import textwrap
 import json
-from alive_progress import alive_bar
 
 #CONSTANTS
 FIRST_LEVEL_PARAMS = ['index', 'name', 'level', 'url']
@@ -20,6 +19,7 @@ def printTitle():
     print("                                       | |                                    ")
     print("                                       |_|                                    ")
     print("\nEasily search for DND5e spells for all your campaign needs!")
+    print("\nThis application will only run with an active internet connection.")
 
 # Print out main menu options
 def printMenuOptions():
@@ -124,12 +124,10 @@ def searchKeyWord():
 
         # give user decision to read more about a spell or return to main menu
         userChoice = subSpellMenu()
-        invalidChoice = True
-        while (invalidChoice or userChoice == 1):
+        while (userChoice == 1):
             try:
                 # Choose a spell to examine further
                 spellChoice = getSpellChoice(numMatches, matchedNames)
-                invalidChoice = False
                 try: 
                     # get spell by index
                     spellToPrintURL = url + matchedIndices[spellChoice - 1]
@@ -205,7 +203,10 @@ def showHelpMenu():
     print("in the spell's name. Input '2' from the main menu and type in your ")
     print("desired key word. The application will search and display any spell ")
     print("that has a match to the keyword in the name. For example, searching")
-    print("'acid' should display any spell whose name has 'acid' in it.\n")
+    print("'acid' should display any spell whose name has 'acid' in it.")
+    print("NOTE: This search option will take slightly longer than the first,")
+    print("because you will have to select a spell to examine it further, as opposed")
+    print("to searching and printing out only 1 spell (as the first option does).\n")
     print("Option 1: Help Manual")
     print("This is the current option you have chosen. Inputting '1' in the main")
     print("menu will always bring you back to this help manual, where you can learn")
@@ -263,12 +264,13 @@ def printSpell(spell):
 def main():
     # variables
     userInput = -1
+    confirmQuit = -1
 
     # Display Title
     printTitle()
 
     # User input loop
-    while (userInput != 0):
+    while (confirmQuit != 0):
         printMenuOptions()
         userInput = getUserInput()
         if (userInput == 3):
@@ -285,7 +287,13 @@ def main():
             showHelpMenu()
             printLine()
         else:
-            print("\nProgram closed.")
+            confirmQuit = input("Enter 0 to confirm that you want to quit, otherwise enter any value to return to main menu: ")
+            try:
+                confirmQuit = int(confirmQuit)
+            except ValueError:
+                confirmQuit = -1
+            if (confirmQuit == 0):
+                print("\nProgram closed.")
 
 if __name__ == "__main__":
     main()
