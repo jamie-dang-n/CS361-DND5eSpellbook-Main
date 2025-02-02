@@ -1,6 +1,12 @@
 # import necessary packages
 import requests
 import textwrap
+import json
+from alive_progress import alive_bar
+
+#C ONSTANTS for parameter searching
+FIRST_LEVEL_PARAMS = ['index', 'name', 'level', 'url']
+SECOND_LEVEL_PARAMS = ['index', 'name', 'url', 'desc', 'higher_level', 'range', 'components', 'material', 'area_of_effect', 'ritua', 'duration', 'concentration', 'casting_time', 'level', 'attack_type', 'damage', 'school', 'classes', 'subclasses', 'url']
 
 def printTitle():
     print("______ _   _______   _____        _____            _ _ _                 _    ")
@@ -15,8 +21,8 @@ def printTitle():
 
 def printMenuOptions():
     print("\nAPPLICATION FUNCTIONS")
-    print("3: Search for a spell by the spell's name.") # (ex. Search for 'shocking grasp', 'fireball', etc.)
-    print("2: Search for a spell by a keyword within the spell's description.") # (ex. Searching 'acid' returns all entries with 'acid' associated with it.)
+    print("3: Search for a spell with exact spell name.") # (ex. Search for 'shocking grasp', 'fireball', etc.)
+    print("2: Search for a spell by a keyword within the spell's name.") # (ex. Searching 'acid' returns all entries with 'acid' associated in the name.)
     print("1: Help Manual.")
     print("0: Quit.\n")
 
@@ -67,7 +73,55 @@ def searchSpellName():
 
 
 def searchKeyWord():
-    print("Option 2 chosen.")
+    matchedIndices = [] # initialize empty array of matched indices
+    matchedNames = [] # initialize empty array of matched names
+    numMatches = 0
+
+    # API endpoint URL
+    url = "https://www.dnd5eapi.co/api/spells/"
+
+    # get user input for key word
+    keyWord = input("Enter a key word to search for: ")
+
+    # find all matching keywords
+    # format user input into lowercase, dashed form
+    keyWord = keyWord.lower()
+    keyWord = keyWord.replace(" ", "+")
+
+    # Find a spell that matches the key word in name field
+    try:
+        allSpellsURL = url + "?"
+        currURL = allSpellsURL + "name=" + keyWord
+        currResponse = requests.get(currURL)
+        if currResponse.status_code == 200:
+            matchingSpells = currResponse.json()
+            for spell in matchingSpells['results']:
+                if spell['index'] not in matchedIndices:
+                    matchedIndices.append(spell['index'])
+                    matchedNames.append(spell['name'])
+                    numMatches += 1
+        else:
+            print("Error: No response with response code", currResponse.status_code)
+            
+    except requests.exceptions.RequestException as e:
+        # handle network-related errors/exceptions
+        print("Error: ", e)
+        return None
+
+    # display the name of every matching spell found
+    if numMatches == 0:
+        print("\nNo matches were found.")
+    else: 
+        print("\nMatches were found.")
+        i = 1
+        for match in matchedNames:
+            print(i, ": ", match)
+            i += 1
+        # give user decision to read more about a spell or return to main menu
+
+    
+def inspectSpellOrReturn():
+    print("yes")
 
 def printLine():
     print("-----------------------------------------------------------------------------")
@@ -77,19 +131,18 @@ def showHelpMenu():
     print("Help Manual")
     print("This program supports searching the DND5e API for particular spells")
     print("based on spell name or a particular keyword. In depth descriptions follow:\n")
-    print("Option 3: Search for a spell by the spell's name")
+    print("Option 3: Search for a spell with exact spell name")
     print("If the user already knows the name of a particular spell they want")
     print("to view the details of, input '3' from the main menu and type in")
     print("the name of a spell, like 'Shocking Grasp'. Information about the")
     print("spell will appear in the console.\n")
-    print("Option 2: Search for a spell by a keyword within the spell's description")
+    print("Option 2: Search for a spell by a keyword within the spell's name")
     print("If you cannot recall the name of a spell, no worries! This option")
-    print("allows you to find a spell based on a 'key word' that you, the user,")
-    print("provide. Input '2' from the main menu and type in your desired key word.")
-    print("The application will search and display any spell that has a match to the ")
-    print("keyword in the spell fields. For example, searching 'acid' should display ")
-    print("any spell whose text fields (like 'description', 'damage type', etc.) have")
-    print("'acid' in it.")
+    print("allows you to find a spell based on a 'key word' that may appear")
+    print("in the spell's name. Input '2' from the main menu and type in your ")
+    print("desired key word. The application will search and display any spell ")
+    print("that has a match to the keyword in the name. For example, searching 'acid'")
+    print("should display any spell whose name has 'acid' in it.")
     printLine()
 
 def printSpell(spell):
@@ -138,7 +191,6 @@ def printSpell(spell):
                     level, 
                     ":",
                     spell['damage']['damage_at_character_level'][level])
-                    
     printLine()
 
 def main():
@@ -162,7 +214,6 @@ def main():
         elif (userInput == 2):
             searchKeyWord()
         elif (userInput == 1):
-            print("\n") # newline
             showHelpMenu()
         else:
             print("\nProgram closed.")
