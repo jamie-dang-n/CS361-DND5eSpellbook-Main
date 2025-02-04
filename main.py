@@ -5,7 +5,7 @@ import json
 
 #CONSTANTS
 FIRST_LEVEL_PARAMS = ['index', 'name', 'level', 'url']
-SECOND_LEVEL_PARAMS = ['index', 'name', 'url', 'desc', 'higher_level', 'range', 'components', 'material', 'area_of_effect', 'ritua', 'duration', 'concentration', 'casting_time', 'level', 'attack_type', 'damage', 'school', 'classes', 'subclasses', 'url']
+SECOND_LEVEL_PARAMS = ['index', 'name', 'url', 'desc', 'higher_level', 'range', 'components', 'material', 'area_of_effect', 'ritual', 'duration', 'concentration', 'casting_time', 'level', 'attack_type', 'damage', 'school', 'classes', 'subclasses', 'url']
 DESC_LENGTH = 70
 
 # Prints out the title of the program with a short sentence describing the application
