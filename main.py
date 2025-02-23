@@ -2,6 +2,7 @@
 import requests
 import textwrap
 import json
+import zmq
 
 #CONSTANTS
 FIRST_LEVEL_PARAMS = ['index', 'name', 'level', 'url']
@@ -135,6 +136,7 @@ def searchKeyWord():
                     if spellToPrintResp.status_code == 200:
                         spellToPrint = spellToPrintResp.json()
                         printSpell(spellToPrint)
+                        # ask user if they want to add this spell to a bookmarks list
                     else:
                         print("Error: spell could not be displayed.")
                 except requests.exceptions.RequestException as e:
@@ -261,8 +263,49 @@ def printSpell(spell):
     print("Class: ", spell['classes'][0]['name'])
     printLine()
 
+def addSpell(spell, bookmarks):
+    invalidInput = True
+    while (invalidInput):
+        try:
+            addOption = int(input("Would you like to add this spell to your bookmarks [1 = yes, 0 = no]?: "))
+            if (addOption < 0 or addOption > 1):
+                print("Invalid Input. Please enter a valid option!")
+            else:
+                invalidInput = False
+        except ValueError:
+            print("Invalid Input. Please enter an integer!") 
+    if (addOption == 1):
+        print("The user wants to add a spell")
+        accessBookmarkMods(spell, bookmarks, 1) # set option to 1 to add the spell
+
+def accessBookmarkMods(spell, bookmarks, option):
+    # interact with the microservice
+    context = zmq.Context()
+
+    # socket to talk to server
+    socket = context.socket(zmq.REQ)
+    socket.connect("tcp://localhost:5555")
+
+    # form dictionary request
+    input_dict = {
+        "json_array": bookmarks,
+        "json_object": spell,
+        "option": option
+    }
+
+    # send request
+    socket.send(b"This is a message from main")
+
+    # receive response
+    message = socket.recv()
+    print(f"Request sent: {message}")
+
+
+
+
 def main():
     # variables
+    bookmarks = [] # initialize empty array of spell JSON objects
     userInput = -1
     confirmQuit = -1
 
@@ -279,6 +322,9 @@ def main():
                 # if a spell was returned, print it
                 print("\nSpell found!\n")
                 printSpell(spell)
+                # ask user if they want to add this spell to a bookmarks list
+                addSpell(spell, bookmarks)
+                
 
         elif (userInput == 2):
             searchKeyWord()
