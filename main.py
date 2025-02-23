@@ -25,6 +25,7 @@ def printTitle():
 # Print out main menu options
 def printMenuOptions():
     print("\nAPPLICATION FUNCTIONS")
+    print("4: View Bookmarks")
     print("3: Search for a spell with exact spell name.") # (ex. Search for 'shocking grasp', 'fireball', etc.)
     print("2: Search for a spell by a keyword within the spell's name.") # (ex. Searching 'acid' returns all entries with 'acid' associated in the name.)
     print("1: Help Manual.")
@@ -36,8 +37,8 @@ def getUserInput():
     invalidInput = True
     while (invalidInput):
         try:
-            userInput = int(input("Choose an option [0, 1, 2, 3]: "))
-            if (userInput < 0 or userInput > 3):
+            userInput = int(input("Choose an option [0, 1, 2, 3, 4]: "))
+            if (userInput < 0 or userInput > 4):
                 print("Invalid Input. Please enter a valid option!")
             else:
                 invalidInput = False
@@ -276,7 +277,7 @@ def addSpell(spell, bookmarks):
             print("Invalid Input. Please enter an integer!") 
     if (addOption == 1):
         print("The user wants to add a spell")
-        accessBookmarkMods(spell, bookmarks, 1) # set option to 1 to add the spell
+        bookmarks[:] = accessBookmarkMods(spell, bookmarks, 1) # set option to 1 to add the spell
 
 def accessBookmarkMods(spell, bookmarks, option):
     # interact with the microservice
@@ -287,25 +288,38 @@ def accessBookmarkMods(spell, bookmarks, option):
     socket.connect("tcp://localhost:5555")
 
     # form dictionary request
-    input_dict = {
+    dict = {
         "json_array": bookmarks,
         "json_object": spell,
         "option": option
     }
+    jsonInput = json.dumps(dict, default=str)
 
     # send request
-    socket.send(b"This is a message from main")
+    socket.send_string(jsonInput)
 
     # receive response
     message = socket.recv()
-    print(f"Request sent: {message}")
+    if (len(message) != 0):
+        decoded = message.decode('utf-8')
+        jsonLoaded = json.loads(decoded)
+        return jsonLoaded
+    return bookmarks # return original list if nothing was done
+    
 
 
+def viewBookmarks(bookmarks):
+    if not bookmarks: # check if list is empty
+        print("You have no spells saved yet!")
+    else:
+        for i, spell in enumerate(bookmarks, start=1):
+            print(f"{i}: ")
+            printSpell(spell)
 
 
 def main():
     # variables
-    bookmarks = [] # initialize empty array of spell JSON objects
+    bookmarks = []
     userInput = -1
     confirmQuit = -1
 
@@ -316,7 +330,9 @@ def main():
     while (confirmQuit != 0):
         printMenuOptions()
         userInput = getUserInput()
-        if (userInput == 3):
+        if (userInput == 4):
+            viewBookmarks(bookmarks)
+        elif (userInput == 3):
             spell = searchSpellName()
             if (spell):
                 # if a spell was returned, print it
