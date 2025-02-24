@@ -31,14 +31,14 @@ def printMenuOptions():
     print("1: Help Manual.")
     print("0: Quit.\n")
 
-# Get user input for the main menu
-def getUserInput():
+# Get user input for any integer input
+def getIntegerInput(prompt, minVal, maxVal):
     userInput = -1
     invalidInput = True
     while (invalidInput):
         try:
-            userInput = int(input("Choose an option [0, 1, 2, 3, 4]: "))
-            if (userInput < 0 or userInput > 4):
+            userInput = int(input(prompt))
+            if (userInput < minVal or userInput > maxVal):
                 print("Invalid Input. Please enter a valid option!")
             else:
                 invalidInput = False
@@ -174,18 +174,10 @@ def subSpellMenu():
     print("\nSPELL OPTIONS")
     print("1: Enter spell index to view more details about that spell")
     print("0: Return to main menu\n")
-    userInput = -1
-    invalidInput = True
-    while (invalidInput):
-        try:
-            userInput = int(input("Select an option [1 or 0]: "))
-            if (userInput < 0 or userInput > 1):
-                print("Invalid Input. Please enter a valid option!")
-            else:
-                invalidInput = False
-        except ValueError:
-            print("Invalid Input. Please enter an integer!")    
+    userInput = getIntegerInput("Select an option [1 or 0]: ", 0, 1)
     return userInput
+
+
 
 # Print a line for ease of reading
 def printLine():
@@ -265,19 +257,17 @@ def printSpell(spell):
     print("Class: ", spell['classes'][0]['name'])
     printLine()
 
+
 def addSpell(spell, bookmarks):
-    invalidInput = True
-    while (invalidInput):
-        try:
-            addOption = int(input("Would you like to add this spell to your bookmarks [1 = yes, 0 = no]?: "))
-            if (addOption < 0 or addOption > 1):
-                print("Invalid Input. Please enter a valid option!")
-            else:
-                invalidInput = False
-        except ValueError:
-            print("Invalid Input. Please enter an integer!") 
+    addOption = getIntegerInput("Would you like to add this spell to your bookmarks [1 = yes, 0 = no]?: ", 0, 1)
     if (addOption == 1):
         bookmarks[:] = accessBookmarkMods(spell, bookmarks, 1) # set option to 1 to add the spell
+
+def removeSpell(spell, bookmarks):
+    removeOption = getIntegerInput("Would you like to remove this spell from your bookmarks [1 = yes, 0 = no]?: ", 0, 1)
+    if (removeOption == 1):
+        bookmarks[:] = accessBookmarkMods(spell, bookmarks, 2) # set option to 2 to remove the spell
+    
 
 def accessBookmarkMods(spell, bookmarks, option):
     # interact with the microservice
@@ -312,9 +302,31 @@ def viewBookmarks(bookmarks):
     if not bookmarks: # check if list is empty
         print("You have no spells saved yet!")
     else:
+        print("Bookmarks")
         for i, spell in enumerate(bookmarks, start=1):
-            print(f"{i}: ")
-            printSpell(spell)
+            print(f"{i}: {bookmarks[i-1]['name']}")
+    
+
+def bookmarksSubmenu(bookmarks):
+    print("\nBOOKMARK OPTIONS")
+    print("1: Enter spell index to view more details about that spell")
+    print("0: Return to main menu\n")
+    option = getIntegerInput("Select an option [1 or 0]: ", 0, 1)
+    while (option == 1):
+        viewBookmarks(bookmarks)
+        getBookmarkedSpell(bookmarks)
+        print("\nBOOKMARK OPTIONS")
+        print("1: Enter spell index to view more details about that spell")
+        print("0: Return to main menu\n")
+        option = getIntegerInput("Select an option [1 or 0]: ", 0, 1)
+
+def getBookmarkedSpell(bookmarks):
+    print("Select the index of a bookmarked spell to view it in more detail.")
+    numSpells = len(bookmarks)
+    spellChoiceString = "\nSpell selection [1 to " + str(numSpells) + "]: "
+    selectedSpell = getIntegerInput(spellChoiceString, 1, numSpells)
+    printSpell(bookmarks[selectedSpell-1])
+    removeSpell(bookmarks[selectedSpell-1], bookmarks)
     
 def exitMicroservices():
     # send the exit input to all the microservices
@@ -332,9 +344,10 @@ def main():
     # User input loop
     while (confirmQuit != 0):
         printMenuOptions()
-        userInput = getUserInput()
+        userInput = getIntegerInput("Choose an option [0, 1, 2, 3, 4]: ", 0, 4)
         if (userInput == 4):
             viewBookmarks(bookmarks)
+            bookmarksSubmenu(bookmarks)
         elif (userInput == 3):
             spell = searchSpellName()
             if (spell):
