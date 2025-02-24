@@ -81,7 +81,7 @@ def searchSpellName():
 
 # Option 2 implementation: search for spells in the API by keyword in spell name 
 # (possibly print many spells)
-def searchKeyWord():
+def searchKeyWord(bookmarks):
     matchedIndices = [] # initialize empty array of matched indices
     matchedNames = [] # initialize empty array of matched names
     numMatches = 0
@@ -138,6 +138,7 @@ def searchKeyWord():
                         spellToPrint = spellToPrintResp.json()
                         printSpell(spellToPrint)
                         # ask user if they want to add this spell to a bookmarks list
+                        addSpell(spellToPrint, bookmarks)
                     else:
                         print("Error: spell could not be displayed.")
                 except requests.exceptions.RequestException as e:
@@ -276,7 +277,6 @@ def addSpell(spell, bookmarks):
         except ValueError:
             print("Invalid Input. Please enter an integer!") 
     if (addOption == 1):
-        print("The user wants to add a spell")
         bookmarks[:] = accessBookmarkMods(spell, bookmarks, 1) # set option to 1 to add the spell
 
 def accessBookmarkMods(spell, bookmarks, option):
@@ -315,7 +315,10 @@ def viewBookmarks(bookmarks):
         for i, spell in enumerate(bookmarks, start=1):
             print(f"{i}: ")
             printSpell(spell)
-
+    
+def exitMicroservices():
+    # send the exit input to all the microservices
+    accessBookmarkMods("", "", 0)
 
 def main():
     # variables
@@ -343,7 +346,7 @@ def main():
                 
 
         elif (userInput == 2):
-            searchKeyWord()
+            searchKeyWord(bookmarks)
         elif (userInput == 1):
             printLine()
             showHelpMenu()
@@ -355,6 +358,7 @@ def main():
             except ValueError:
                 confirmQuit = -1
             if (confirmQuit == 0):
+                exitMicroservices()
                 print("\nProgram closed.")
 
 if __name__ == "__main__":
