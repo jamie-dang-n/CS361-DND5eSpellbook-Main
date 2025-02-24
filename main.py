@@ -266,7 +266,10 @@ def addSpell(spell, bookmarks):
 def removeSpell(spell, bookmarks):
     removeOption = getIntegerInput("Would you like to remove this spell from your bookmarks [1 = yes, 0 = no]?: ", 0, 1)
     if (removeOption == 1):
-        bookmarks[:] = accessBookmarkMods(spell, bookmarks, 2) # set option to 2 to remove the spell
+        print("WARNING: Removing the spell will delete it from your bookmarks. Please confirm that you want to delete it.")
+        removeOption = getIntegerInput("Would you like to remove this spell from your bookmarks [1 = yes, 0 = no]?: ", 0, 1)
+        if (removeOption == 1):
+            bookmarks[:] = accessBookmarkMods(spell, bookmarks, 2) # set option to 2 to remove the spell
     
 
 def accessBookmarkMods(spell, bookmarks, option):
@@ -302,31 +305,40 @@ def viewBookmarks(bookmarks):
     if not bookmarks: # check if list is empty
         print("You have no spells saved yet!")
     else:
-        print("Bookmarks")
+        print("\nBookmarks")
         for i, spell in enumerate(bookmarks, start=1):
             print(f"{i}: {bookmarks[i-1]['name']}")
     
 
-def bookmarksSubmenu(bookmarks):
-    print("\nBOOKMARK OPTIONS")
-    print("1: Enter spell index to view more details about that spell")
-    print("0: Return to main menu\n")
-    option = getIntegerInput("Select an option [1 or 0]: ", 0, 1)
-    while (option == 1):
-        viewBookmarks(bookmarks)
-        getBookmarkedSpell(bookmarks)
-        print("\nBOOKMARK OPTIONS")
-        print("1: Enter spell index to view more details about that spell")
-        print("0: Return to main menu\n")
-        option = getIntegerInput("Select an option [1 or 0]: ", 0, 1)
 
-def getBookmarkedSpell(bookmarks):
-    print("Select the index of a bookmarked spell to view it in more detail.")
+def bookmarksSubmenu(bookmarks):
+    option = 1
+    while (option > 0):
+        viewBookmarks(bookmarks)
+        if (len(bookmarks) > 0):
+            print("\nBOOKMARK OPTIONS")
+            print("2: Enter spell index to delete the spell")
+            print("1: Enter spell index to view more details about that spell")
+            print("0: Return to main menu\n")
+            option = getIntegerInput("Select an option [0, 1, or 2]: ", 0, 2)
+            if (option == 1):
+                viewBookmarks(bookmarks)
+                getBookmarkedSpell(bookmarks, "\nSelect the index of a bookmarked spell to view it in more detail.")
+            elif (option == 2):
+                viewBookmarks(bookmarks)
+                selectedSpell = getBookmarkedSpell(bookmarks, "\nSelect the index of a bookmarked spell to delete.")
+                removeSpell(bookmarks[selectedSpell], bookmarks)
+        else:
+            option = 0
+
+def getBookmarkedSpell(bookmarks, prompt):
+    print(prompt)
     numSpells = len(bookmarks)
     spellChoiceString = "\nSpell selection [1 to " + str(numSpells) + "]: "
-    selectedSpell = getIntegerInput(spellChoiceString, 1, numSpells)
-    printSpell(bookmarks[selectedSpell-1])
-    removeSpell(bookmarks[selectedSpell-1], bookmarks)
+    selectedSpell = getIntegerInput(spellChoiceString, 1, numSpells) - 1
+    printSpell(bookmarks[selectedSpell])
+    return selectedSpell
+    
     
 def exitMicroservices():
     # send the exit input to all the microservices
@@ -346,7 +358,6 @@ def main():
         printMenuOptions()
         userInput = getIntegerInput("Choose an option [0, 1, 2, 3, 4]: ", 0, 4)
         if (userInput == 4):
-            viewBookmarks(bookmarks)
             bookmarksSubmenu(bookmarks)
         elif (userInput == 3):
             spell = searchSpellName()
@@ -356,8 +367,6 @@ def main():
                 printSpell(spell)
                 # ask user if they want to add this spell to a bookmarks list
                 addSpell(spell, bookmarks)
-                
-
         elif (userInput == 2):
             searchKeyWord(bookmarks)
         elif (userInput == 1):
