@@ -287,7 +287,7 @@ def accessBookmarkMods(spell, bookmarks, option):
 
     # socket to talk to server
     socket = context.socket(zmq.REQ)
-    socket.connect("tcp://localhost:5555")
+    socket.connect("tcp://localhost:5553")
 
     # form dictionary request
     dict = {
