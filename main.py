@@ -9,6 +9,7 @@ FIRST_LEVEL_PARAMS = ['index', 'name', 'level', 'url']
 SECOND_LEVEL_PARAMS = ['index', 'name', 'url', 'desc', 'higher_level', 'range', 'components', 'material', 'area_of_effect', 'ritual', 'duration', 'concentration', 'casting_time', 'level', 'attack_type', 'damage', 'school', 'classes', 'subclasses', 'url']
 DESC_LENGTH = 70
 
+# MAIN Program & Helpers Functions ----------------------------------------------------------------------------
 # Prints out the title of the program with a short sentence describing the application
 def printTitle():
     print("______ _   _______   _____        _____            _ _ _                 _    ")
@@ -177,8 +178,6 @@ def subSpellMenu():
     userInput = getIntegerInput("Select an option [1 or 0]: ", 0, 1)
     return userInput
 
-
-
 # Print a line for ease of reading
 def printLine():
     print("-----------------------------------------------------------------------------")
@@ -257,12 +256,20 @@ def printSpell(spell):
     print("Class: ", spell['classes'][0]['name'])
     printLine()
 
+# Signal all microservices to quit
+def exitMicroservices():
+    # send the exit input to all the microservices
+    accessBookmarkMods("", "", 0)
+# -------------------------------------------------------------------------------------------------------------
 
+# MICROSERVICE B ----------------------------------------------------------------------------------------------
+# Get option to add a spell to bookmarks
 def addSpell(spell, bookmarks):
     addOption = getIntegerInput("Would you like to add this spell to your bookmarks [1 = yes, 0 = no]?: ", 0, 1)
     if (addOption == 1):
         bookmarks[:] = accessBookmarkMods(spell, bookmarks, 1) # set option to 1 to add the spell
 
+# Get option + confirmation to remove a spell from bookmarks
 def removeSpell(spell, bookmarks):
     removeOption = getIntegerInput("Would you like to remove this spell from your bookmarks [1 = yes, 0 = no]?: ", 0, 1)
     if (removeOption == 1):
@@ -271,7 +278,7 @@ def removeSpell(spell, bookmarks):
         if (removeOption == 1):
             bookmarks[:] = accessBookmarkMods(spell, bookmarks, 2) # set option to 2 to remove the spell
     
-
+# Interaction with the bookmark_mods.py microservice: add/remove spells
 def accessBookmarkMods(spell, bookmarks, option):
     # interact with the microservice
     context = zmq.Context()
@@ -299,8 +306,7 @@ def accessBookmarkMods(spell, bookmarks, option):
         return jsonLoaded
     return bookmarks # return original list if nothing was done
     
-
-
+# Print out name of spells in bookmarks list
 def viewBookmarks(bookmarks):
     if not bookmarks: # check if list is empty
         print("You have no spells saved yet!")
@@ -309,8 +315,7 @@ def viewBookmarks(bookmarks):
         for i, spell in enumerate(bookmarks, start=1):
             print(f"{i}: {bookmarks[i-1]['name']}")
     
-
-
+# Display and get options for the bookmarks submenu (view a spell's details or delete it)
 def bookmarksSubmenu(bookmarks):
     option = 1
     while (option > 0):
@@ -331,6 +336,7 @@ def bookmarksSubmenu(bookmarks):
         else:
             option = 0
 
+# Retrieve a spell index from spell selection in bookmarks
 def getBookmarkedSpell(bookmarks, prompt):
     print(prompt)
     numSpells = len(bookmarks)
@@ -338,12 +344,14 @@ def getBookmarkedSpell(bookmarks, prompt):
     selectedSpell = getIntegerInput(spellChoiceString, 1, numSpells) - 1
     printSpell(bookmarks[selectedSpell])
     return selectedSpell
-    
-    
-def exitMicroservices():
-    # send the exit input to all the microservices
-    accessBookmarkMods("", "", 0)
+# -------------------------------------------------------------------------------------------------------------
 
+# MICROSERVICE C ----------------------------------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------------------------------------------------
+
+# Program Driver
 def main():
     # variables
     bookmarks = []
