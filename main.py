@@ -7,6 +7,7 @@ import zmq
 #CONSTANTS
 FIRST_LEVEL_PARAMS = ['index', 'name', 'level', 'url']
 SECOND_LEVEL_PARAMS = ['index', 'name', 'url', 'desc', 'higher_level', 'range', 'components', 'material', 'area_of_effect', 'ritual', 'duration', 'concentration', 'casting_time', 'level', 'attack_type', 'damage', 'school', 'classes', 'subclasses', 'url']
+NUMERIC_SECOND_LEVEL_PARAMS = ['range', 'casting_time', 'level', 'damage_at_slot_level']
 DESC_LENGTH = 70
 
 # MAIN Program & Helpers Functions ----------------------------------------------------------------------------
@@ -26,6 +27,7 @@ def printTitle():
 # Print out main menu options
 def printMenuOptions():
     print("\nAPPLICATION FUNCTIONS")
+    print("5: Add a custom spell to Bookmarks")
     print("4: View Bookmarks")
     print("3: Search for a spell with exact spell name.") # (ex. Search for 'shocking grasp', 'fireball', etc.)
     print("2: Search for a spell by a keyword within the spell's name.") # (ex. Searching 'acid' returns all entries with 'acid' associated in the name.)
@@ -347,7 +349,23 @@ def getBookmarkedSpell(bookmarks, prompt):
 # -------------------------------------------------------------------------------------------------------------
 
 # MICROSERVICE C ----------------------------------------------------------------------------------------------
+# get user input for spell fields
+def getSpellFields():
+    # Create an empty dictionary with keys from SECOND_LEVEL PARAMS. 
+    # the values start as None (NULL)
+    spellFields = createDictFromArray(SECOND_LEVEL_PARAMS)
+    for key in spellFields:
+        if (key != 'index' and key != 'url'):
+            value = input(f"Enter a value for the field '{key}': ")
+            spellFields[key] = value
+    spellFields['index'] = spellFields['name'].lower().replace(" ", "-")
+    spellFields['url'] = "custom"
+    return spellFields
 
+
+
+def createDictFromArray(string_array):
+    return {key: None for key in string_array}
 
 # -------------------------------------------------------------------------------------------------------------
 
@@ -364,8 +382,11 @@ def main():
     # User input loop
     while (confirmQuit != 0):
         printMenuOptions()
-        userInput = getIntegerInput("Choose an option [0, 1, 2, 3, 4]: ", 0, 4)
-        if (userInput == 4):
+        userInput = getIntegerInput("Choose an option [0, 1, 2, 3, 4, 5]: ", 0, 5)
+        if (userInput == 5):
+            customSpell = getSpellFields()
+            print(customSpell) # DEBUG
+        elif (userInput == 4):
             bookmarksSubmenu(bookmarks)
         elif (userInput == 3):
             spell = searchSpellName()
