@@ -264,6 +264,74 @@ def exitMicroservices():
     accessBookmarkMods("", "", 0)
 # -------------------------------------------------------------------------------------------------------------
 
+# MICROSERVICE A ----------------------------------------------------------------------------------------------
+# Sort the bookmarks list
+def getSortOption(bookmarks, sortChoice):
+    numMatches = 0
+
+    # interact with the microservice
+    context = zmq.Context()
+
+    # socket to talk to server
+    socket = context.socket(zmq.REQ)
+    socket.connect("tcp://localhost:5555")
+    if (sortChoice == 0):
+        # exit the microservice
+        exit_message = json.dumps({"end_program": True})
+        socket.send_string(exit_message)
+        dummy_msg = socket.recv() # receive the sent message so the microservice can actually terminate
+    else:
+        # form dictionary request
+        dict = {
+            "sort_by": None,
+            "descending": None,
+            "class_name": None
+        }
+        if (sortChoice == 1):
+            dict['sort_by'] = "level"
+            print("SORTING TYPE")
+            print("2: Sort spells by level descending")
+            print("1: Sort spells by level ascending\n")
+            sortingType = getIntegerInput("Select an option [1 or 2]: ", 1, 2)
+            if (sortingType == 1):
+                dict['descending'] = False
+            else:
+                dict['descending'] = True
+        elif (sortChoice == 2):
+            dict['sort_by'] = "name"
+        elif (sortChoice == 3):
+            dict['sort_by'] = "class"
+            classType = input("Enter the class you want to sort by: ")
+            dict['class_name'] = classType
+
+        # send the request
+        message = json.dumps(dict)
+        socket.send_string(message)
+        result = socket.recv_string()
+        try: 
+            spell_data = json.loads(result)
+            if spell_data == []:
+                # if no spells returned, class name was invalid
+                print("Class not found.")
+            else:
+                # iterate through the response, only printing out what matches.
+                for spell in spell_data:
+                    for bookmarked_spell in bookmarks:
+                        if bookmarked_spell['index'] == spell['index']:
+                            printSpell(spell)
+                            numMatches += 1
+                if (numMatches == 0):
+                    # All other options should return results-- otherwise, none of the spells matched a class
+                    print("No spells matched the given class.")
+        except json.JSONDecodeError:
+            print("Error: Could not decode server resonse")
+
+
+        
+
+
+# -------------------------------------------------------------------------------------------------------------
+
 # MICROSERVICE B ----------------------------------------------------------------------------------------------
 # Get option to add a spell to bookmarks
 def addSpell(spell, bookmarks):
@@ -324,10 +392,11 @@ def bookmarksSubmenu(bookmarks):
         viewBookmarks(bookmarks)
         if (len(bookmarks) > 0):
             print("\nBOOKMARK OPTIONS")
+            print("3: Choose a sorting option to sort bookmarked spells by")
             print("2: Enter spell index to delete the spell")
             print("1: Enter spell index to view more details about that spell")
             print("0: Return to main menu\n")
-            option = getIntegerInput("Select an option [0, 1, or 2]: ", 0, 2)
+            option = getIntegerInput("Select an option [0, 1, 2, or 3]: ", 0, 3)
             if (option == 1):
                 viewBookmarks(bookmarks)
                 getBookmarkedSpell(bookmarks, "\nSelect the index of a bookmarked spell to view it in more detail.")
@@ -335,6 +404,15 @@ def bookmarksSubmenu(bookmarks):
                 viewBookmarks(bookmarks)
                 selectedSpell = getBookmarkedSpell(bookmarks, "\nSelect the index of a bookmarked spell to delete.")
                 removeSpell(bookmarks[selectedSpell], bookmarks)
+            elif (option == 3):
+                print("SORTING OPTIONS")
+                print("3: Sort spells by class, alphabetically")
+                print("2: Sort spells by name, alphabetically")
+                print("1: Sort spells by level, ascending or descending")
+                print("0: Return to Bookmarks Options\n")
+                sortChoice = getIntegerInput("Select an option [0, 1, 2, or 3]: ", 0, 3)
+                getSortOption(bookmarks, sortChoice)
+                
         else:
             option = 0
 
