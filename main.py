@@ -255,7 +255,8 @@ def printSpell(spell):
                         spell['damage']['damage_at_character_level'][level])
 
     print("School of Magic: ", spell['school']['name'])
-    print("Class: ", spell['classes'][0]['name'])
+    for spell_class in spell['classes']:
+        print("Class(es): ", spell_class['name'])
     printLine()
 
 # Signal all microservices to quit
