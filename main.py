@@ -186,28 +186,49 @@ def printLine():
 
 # Option 1: Display help menu
 def showHelpMenu():
-    print("Help Manual")
-    print("This program supports searching the DND5e API for particular spells")
-    print("based on spell name or a particular keyword. In depth descriptions follow:\n")
-    print("Option 3: Search for a spell with exact spell name")
-    print("If the user already knows the name of a particular spell they want")
-    print("to view the details of, input '3' from the main menu and type in")
-    print("the name of a spell, like 'Shocking Grasp'. Information about the")
-    print("spell will appear in the console.\n")
-    print("Option 2: Search for a spell by a keyword within the spell's name")
-    print("If you cannot recall the name of a spell, no worries! This option")
-    print("allows you to find a spell based on a 'key word' that may appear")
-    print("in the spell's name. Input '2' from the main menu and type in your ")
-    print("desired key word. The application will search and display any spell ")
-    print("that has a match to the keyword in the name. For example, searching")
-    print("'acid' should display any spell whose name has 'acid' in it.")
-    print("NOTE: This search option will take slightly longer than the first,")
-    print("because you will have to select a spell to examine it further, as opposed")
-    print("to searching and printing out only 1 spell (as the first option does).\n")
-    print("Option 1: Help Manual")
-    print("This is the current option you have chosen. Inputting '1' in the main")
-    print("menu will always bring you back to this help manual, where you can learn")
-    print("more about the commands this application allows.")
+    print("""Help Manual
+          
+This program supports searching the DND5e API for particular spells
+based on spell name or a particular keyword. In depth descriptions follow.
+
+Option 6: Roll a dice (with or without modifiers)
+You can roll a dice with any number of faces between 1 and 10000.
+You can also add and subtract modifiers, where the modifier can
+take any value between 1 and 10000.
+
+Option 5: Add a custom spell to Bookmarks/Edit a bookmarked spell
+This is where you can create a custom spell or edit a spell in your
+bookmarks. You have full control over the given fields.
+          
+Option 4: View Bookmarks
+This is where you can quickly access and view your saved spells, 
+including spells you've edited/spells that you've custom-made.
+          
+Option 3: Search for a spell with exact spell name
+If the user already knows the name of a particular spell they want
+to view the details of, input '3' from the main menu and type in
+the name of a spell, like 'Shocking Grasp'. Information about the
+spell will appear in the console. 
+The console will also prompt you to add the spell to your bookmarks,
+where you can refer to them later.
+          
+Option 2: Search for a spell by a keyword within the spell's name
+If you cannot recall the name of a spell, no worries! This option
+allows you to find a spell based on a 'key word' that may appear
+in the spell's name. Input '2' from the main menu and type in your 
+desired key word. The application will search and display any spell 
+that has a match to the keyword in the name. For example, searching
+'acid' should display any spell whose name has 'acid' in it.
+The console will also prompt you to add the spell to your bookmarks,
+where you can refer to them later.
+NOTE: This search option will take slightly longer than the first,
+because you will have to select a spell to examine it further, as opposed
+to searching and printing out only 1 spell (as the first option does).
+          
+Option 1: Help Manual
+This is the current option you have chosen. Inputting '1' in the main
+menu will always bring you back to this help manual, where you can learn
+more about the commands this application allows.""")
 
 # Print select (programmer-specified) data from a single spell
 def printSpell(spell):
