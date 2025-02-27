@@ -262,6 +262,7 @@ def printSpell(spell):
 def exitMicroservices():
     # send the exit input to all the microservices
     accessBookmarkMods("", "", 0)
+    getSortOption(None, 0)
 # -------------------------------------------------------------------------------------------------------------
 
 # MICROSERVICE A ----------------------------------------------------------------------------------------------
@@ -285,7 +286,9 @@ def getSortOption(bookmarks, sortChoice):
         dict = {
             "sort_by": None,
             "descending": None,
-            "class_name": None
+            "class_name": None,
+            "bookmarks": True,
+            "spell_list": bookmarks
         }
         if (sortChoice == 1):
             dict['sort_by'] = "level"
@@ -314,15 +317,11 @@ def getSortOption(bookmarks, sortChoice):
                 # if no spells returned, class name was invalid
                 print("Class not found.")
             else:
-                # iterate through the response, only printing out what matches.
+                # iterate through the response, printing out each spell
                 for spell in spell_data:
-                    for bookmarked_spell in bookmarks:
-                        if bookmarked_spell['index'] == spell['index']:
-                            printSpell(spell)
-                            numMatches += 1
-                if (numMatches == 0):
-                    # All other options should return results-- otherwise, none of the spells matched a class
-                    print("No spells matched the given class.")
+                    printSpell(spell)
+                       
+          
         except json.JSONDecodeError:
             print("Error: Could not decode server resonse")
 
