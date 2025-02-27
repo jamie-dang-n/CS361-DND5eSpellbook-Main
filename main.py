@@ -7,7 +7,6 @@ import zmq
 #CONSTANTS
 FIRST_LEVEL_PARAMS = ['index', 'name', 'level', 'url']
 SECOND_LEVEL_PARAMS = ['index', 'name', 'url', 'desc', 'higher_level', 'range', 'components', 'material', 'area_of_effect', 'ritual', 'duration', 'concentration', 'casting_time', 'level', 'attack_type', 'damage', 'school', 'classes', 'subclasses', 'url']
-NUMERIC_SECOND_LEVEL_PARAMS = ['range', 'casting_time', 'level', 'damage_at_slot_level']
 DESC_LENGTH = 70
 
 # MAIN Program & Helpers Functions ----------------------------------------------------------------------------
@@ -27,7 +26,7 @@ def printTitle():
 # Print out main menu options
 def printMenuOptions():
     print("\nAPPLICATION FUNCTIONS")
-    print("5: Add a custom spell to Bookmarks")
+    print("5: Add a custom spell to Bookmarks/Edit a bookmarked spell")
     print("4: View Bookmarks")
     print("3: Search for a spell with exact spell name.") # (ex. Search for 'shocking grasp', 'fireball', etc.)
     print("2: Search for a spell by a keyword within the spell's name.") # (ex. Searching 'acid' returns all entries with 'acid' associated in the name.)
@@ -241,18 +240,26 @@ def printSpell(spell):
         print("Damage type: ", spell['damage']['damage_type']['name'])
         if 'damage_at_slot_level' in spell['damage']:
             print("\nDamage at slot level:")
+            numSlots = 0
             for slot in (spell['damage']['damage_at_slot_level']):
                 print("Slot level", 
                         slot, 
                         ":", 
                         spell['damage']['damage_at_slot_level'][slot])
+                numSlots += 1
+            if numSlots == 0:
+                print("No information for damage at slot levels.")
         if 'damage_at_character_level' in spell['damage']:
             print("\nDamage at character level:")
+            numLevels = 0
             for level in (spell['damage']['damage_at_character_level']):
                 print("Character level ", 
                         level, 
                         ":",
                         spell['damage']['damage_at_character_level'][level])
+                numLevels += 1
+            if numLevels == 0:
+                print("No ifnormation for damage at character levels")
 
     print("School of Magic: ", spell['school']['name'])
     for spell_class in spell['classes']:
@@ -264,14 +271,13 @@ def exitMicroservices():
     # send the exit input to all the microservices
     accessBookmarkMods("", "", 0)
     getSortOption(None, 0)
+    generateSpell(None, 0, None, None)
 # -------------------------------------------------------------------------------------------------------------
 
 # MICROSERVICE A ----------------------------------------------------------------------------------------------
 # Sort the bookmarks list
 def getSortOption(bookmarks, sortChoice):
-    numMatches = 0
-
-    # interact with the microservice
+    # interact with microservice A
     context = zmq.Context()
 
     # socket to talk to server
@@ -321,15 +327,8 @@ def getSortOption(bookmarks, sortChoice):
                 # iterate through the response, printing out each spell
                 for spell in spell_data:
                     printSpell(spell)
-                       
-          
         except json.JSONDecodeError:
             print("Error: Could not decode server resonse")
-
-
-        
-
-
 # -------------------------------------------------------------------------------------------------------------
 
 # MICROSERVICE B ----------------------------------------------------------------------------------------------
@@ -350,7 +349,7 @@ def removeSpell(spell, bookmarks):
     
 # Interaction with the bookmark_mods.py microservice: add/remove spells
 def accessBookmarkMods(spell, bookmarks, option):
-    # interact with the microservice
+    # interact with microservice B
     context = zmq.Context()
 
     # socket to talk to server
@@ -432,18 +431,150 @@ def getSpellFields():
     # Create an empty dictionary with keys from SECOND_LEVEL PARAMS. 
     # the values start as None (NULL)
     spellFields = createDictFromArray(SECOND_LEVEL_PARAMS)
-    for key in spellFields:
-        if (key != 'index' and key != 'url'):
-            value = input(f"Enter a value for the field '{key}': ")
-            spellFields[key] = value
+
+    # get basic field values
+    for key in ['name', 'level', 'range', 'casting_time', 'duration', 'attack_type']:
+        value = input(f"Enter a value for the field '{key}': ")
+        spellFields[key] = value
+
+    # set index and URL
     spellFields['index'] = spellFields['name'].lower().replace(" ", "-")
     spellFields['url'] = "custom"
+
+    # handle description
+    desc = input("Enter the spell description: ")
+    spellFields['desc'] = [desc]
+
+    # handle higher level effects
+    higher_level = input("Enter higher level effects (leave empty if none): ")
+    if higher_level:
+        spellFields['higher_level'] = [higher_level]
+
+    # handle concentration
+    concentration = input("Does this spell require concentration? (yes/no): ").lower()
+    spellFields['concentration'] = (concentration == 'yes')
+
+    # handle ritual
+    ritual = input("Is this spell a ritual? (yes/no): ").lower()
+    spellFields['ritual'] = (ritual == 'yes')
+
+    # handle components
+    components_input = input("Enter components (separate with commas, e.g., V,S,M): ")
+    spellFields['components'] = [comp.strip() for comp in components_input.split(',')]
+
+    # handle damage type
+    has_damage = input("Does this spell deal damage? (yes/no): ").lower()
+    if (has_damage == 'yes'):
+        damage_type = input("Enter damage type (e.g. Fire, Cold, etc.): ")
+        spellFields['damage']['damage_type']['name'] = damage_type
+        # handle dmaage scaling
+        scaling_type = input("Does damage scale with slot level or character level? (slot/character): ")
+        if scaling_type == 'slot':
+            levels = input("Enter slot levels to define (comma separated, e.g., 1, 5, 11): ")
+            for level in levels.split(','):
+                level = level.strip()
+                damage = input(f"Enter damage for slot level {level}: ")
+                spellFields['damage']['damage_at_slot_level'][level] = damage
+        elif scaling_type == 'character':
+            levels = input("Enter character levels to define (comma separated, e.g., 1, 5, 11): ")
+            for level in levels.split(','):
+                level = level.strip()
+                damage = input(f"Enter damage for character level {level}: ")
+                spellFields['damage']['damage_at_character_level'][level] = damage
+
+    # handle school of magic
+    school = input("Enter school of magic: ")
+    spellFields['school']['name'] = school
+
+    # handle classes
+    classes_input = input("Enter classes that can use this spell (comma separated): ")
+    for class_name in classes_input.split(','):
+        class_name = class_name.strip()
+        if class_name:
+            spellFields['classes'].append({'name':class_name})
+
     return spellFields
 
+def generateSpell(spellFields, option, bookmarks, spellToEdit):
+    # interact with microservice C
+    context = zmq.Context()
+
+    # socket to talk to server
+    socket = context.socket(zmq.REQ)
+    socket.connect("tcp://localhost:5554")
+
+    # form dictionary request
+    dict = {
+        "option": option,
+        "json_array": bookmarks,
+        "json_object": spellToEdit,
+        "new_fields": spellFields
+    }
+    jsonInput = json.dumps(dict, default=str)
+
+    # send request
+    socket.send_string(jsonInput)
+
+    # receive response
+    message = socket.recv()
+    if (len(message) != 0):
+        decoded = message.decode('utf-8')
+        jsonLoaded = json.loads(decoded)
+        return jsonLoaded # this will be a new set of bookmarks with the edited spell
+
+def newSpellSubmenu():
+    print("NEW SPELL OPTIONS")
+    print("2: Edit an existing spell in your bookmarks list")
+    print("1: Create an entirely new spell")
+    print("0: Return to main menu")
+    option = getIntegerInput("Select an option [0, 1, or 2]: ", 0, 2)
+    return option
+
+def getSpellToEdit(bookmarks):
+    viewBookmarks(bookmarks)
+    spellEditIndex = getBookmarkedSpell(bookmarks, "Select a spell to edit")
+    return bookmarks[spellEditIndex]
 
 
 def createDictFromArray(string_array):
-    return {key: None for key in string_array}
+    # Create a basic dictionary with all keys set to None
+    spell_dict = {key: None for key in string_array}
+    
+    # Create the proper nested structure for complex fields
+    if 'damage' in spell_dict:
+        spell_dict['damage'] = {
+            'damage_type': {'name': None},
+            'damage_at_slot_level': {},
+            'damage_at_character_level': {}
+        }
+
+    if 'school' in spell_dict:
+        spell_dict['school'] = {'name': None}
+    
+    if 'classes' in spell_dict:
+        spell_dict['classes'] = []
+    
+    if 'subclasses' in spell_dict:
+        spell_dict['subclasses'] = []
+    
+    # Initialize as False for boolean fields
+    if 'concentration' in spell_dict:
+        spell_dict['concentration'] = False
+    
+    if 'ritual' in spell_dict:
+        spell_dict['ritual'] = False
+    
+    # Initialize as empty lists for array fields
+    if 'desc' in spell_dict:
+        spell_dict['desc'] = ['']
+    
+    if 'higher_level' in spell_dict:
+        spell_dict['higher_level'] = []
+    
+    if 'components' in spell_dict:
+        spell_dict['components'] = []
+    
+    return spell_dict
 
 # -------------------------------------------------------------------------------------------------------------
 
@@ -462,8 +593,19 @@ def main():
         printMenuOptions()
         userInput = getIntegerInput("Choose an option [0, 1, 2, 3, 4, 5]: ", 0, 5)
         if (userInput == 5):
-            customSpell = getSpellFields()
-            print(customSpell) # DEBUG
+            option = newSpellSubmenu()
+            if (option > 0):
+                if (option == 1):
+                    customSpell = getSpellFields()
+                    newSpell = generateSpell(customSpell, option, bookmarks, None)
+                elif (option == 2):
+                    # select some spell to edit
+                    if (len(bookmarks) > 0):
+                        spellToEdit = getSpellToEdit(bookmarks)
+                        spellEdits = getSpellFields()
+                        bookmarks = generateSpell(spellEdits, option, bookmarks, spellToEdit)
+                    else:
+                        print("No spells are in your bookmarks to edit.")
         elif (userInput == 4):
             bookmarksSubmenu(bookmarks)
         elif (userInput == 3):
