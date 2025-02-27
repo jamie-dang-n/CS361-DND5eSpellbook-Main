@@ -26,6 +26,7 @@ def printTitle():
 # Print out main menu options
 def printMenuOptions():
     print("\nAPPLICATION FUNCTIONS")
+    print("6: Roll a dice (with or without modifiers)")
     print("5: Add a custom spell to Bookmarks/Edit a bookmarked spell")
     print("4: View Bookmarks")
     print("3: Search for a spell with exact spell name.") # (ex. Search for 'shocking grasp', 'fireball', etc.)
@@ -273,6 +274,8 @@ def exitMicroservices():
     generateSpell(None, 0, None, None)
     accessBookmarkMods("", "", 0)
     getSortOption(None, 0)
+    accessDiceRoller(0, None, None, None)
+
 # -------------------------------------------------------------------------------------------------------------
 
 # MICROSERVICE A ----------------------------------------------------------------------------------------------
@@ -537,7 +540,58 @@ def getSpellToEdit(bookmarks):
     spellEditIndex = getBookmarkedSpell(bookmarks, "\nSelect a spell to edit")
     return bookmarks[spellEditIndex]
 # -------------------------------------------------------------------------------------------------------------
+# MICROSERVICE D ----------------------------------------------------------------------------------------------
+def accessDiceRoller(option, n, m, operator):
+    # interact with microservice C
+    context = zmq.Context()
 
+    # socket to talk to server
+    socket = context.socket(zmq.REQ)
+    socket.connect("tcp://localhost:5552")
+
+    # form dictionary request
+    dict = {
+        "option": option,
+        "n": n,
+        "operation": operator,
+        "m": m
+    }
+    jsonInput = json.dumps(dict, default=str)
+
+    # send request
+    socket.send_string(jsonInput)
+
+    # receive response
+    result = socket.recv()
+    dice_roll = int.from_bytes(result, byteorder='big')
+    
+    return dice_roll
+
+def getDiceData():
+    n = getIntegerInput("Enter the number of faces on the dice to roll (max number of faces is 10000): ", 0, 10000)
+    isModified = None
+    while (isModified != "yes" and isModified != "no"):
+        isModified = input("Do you want to add a modifier to this dice roll? (yes/no): ").lower()
+        if (isModified == "yes"):
+            option = 2
+            invalidOperator = True
+            while (invalidOperator):
+                operator = input("Do you want to add/subtract to the dice roll? (+/-): ")
+                if (operator == "+" or operator == "-"):
+                    invalidOperator = False
+                else:
+                    print("Invalid input. Please enter + or -")
+            m = getIntegerInput("Enter the value of the modifier (max modifier is 10000): ", 0, 10000)
+        elif (isModified == "no"):
+            option = 1
+            m = None
+            operator = None
+        else: 
+            print("Invalid input. Please enter \"yes\" or \"no\".")
+    
+    return accessDiceRoller(option, n, m, operator)
+    
+# -------------------------------------------------------------------------------------------------------------
 # Program Driver
 def main():
     # variables
@@ -551,8 +605,11 @@ def main():
     # User input loop
     while (confirmQuit != 0):
         printMenuOptions()
-        userInput = getIntegerInput("Choose an option [0, 1, 2, 3, 4, 5]: ", 0, 5)
-        if (userInput == 5):
+        userInput = getIntegerInput("Choose an option [0, 1, 2, 3, 4, 5, 6]: ", 0, 6)
+        if (userInput == 6):
+            dice_roll = getDiceData()
+            print(f"\nYour dice roll result is: {dice_roll}")
+        elif (userInput == 5):
             option = newSpellSubmenu()
             if (option > 0):
                 if (option == 1):
